@@ -101,7 +101,7 @@ public class Pktsniffer {
                 if (input == -1) {
                     break;
                 }
-                System.out.printf("'%x'\n", input);
+                System.out.printf("%x\n", input);
                 counter++; // track how many bytes are read
             }
 
