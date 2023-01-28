@@ -42,8 +42,18 @@ public class Pktsniffer {
         pktsniffer.runSniffer();
     }
 
+    private static void usageAndExit(boolean isError) {
+        System.err.println("""
+                java Pktsniffer -r <file>
+                """);
+        System.exit(isError ? 1 : 0);
+    }
+
     public void parseCLA(String[] args) {
         //TODO add check to verify correct address formats 'X.X.X.X'
+        if (args.length == 0) {
+            usageAndExit(false);
+        }
         try {
             int index = 0;
             while (index < args.length) {
@@ -65,7 +75,14 @@ public class Pktsniffer {
                     Input mismatch; verify correct input for each flag.
                     -c and port flags MUST be followed by integers.
                     """);
-            System.exit(-1);
+            usageAndExit(true);
+        }
+
+        if (this.filename == null) {
+            System.err.println("""
+                    Missing filename.
+                    """);
+            usageAndExit(true);
         }
     }
 
@@ -84,7 +101,7 @@ public class Pktsniffer {
                 if (input == -1) {
                     break;
                 }
-                System.out.println("'" + (char) input + "'");
+                System.out.printf("'%x'\n", input);
                 counter++; // track how many bytes are read
             }
 
