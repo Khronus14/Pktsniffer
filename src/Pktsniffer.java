@@ -46,7 +46,7 @@ public class Pktsniffer {
         System.err.println("""
                 java Pktsniffer -r <file>
                 """);
-        System.exit(isError ? -1 : 0);
+        System.exit(isError ? 1 : 0);
     }
 
     public void parseCLA(String[] args) {
