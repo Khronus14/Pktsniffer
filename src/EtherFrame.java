@@ -14,13 +14,22 @@ public class EtherFrame {
                 etherArray[2], etherArray[3], etherArray[4], etherArray[5]));
         etherMSG.append(String.format(sourceMAC, etherArray[6], etherArray[7],
                 etherArray[8], etherArray[9], etherArray[10], etherArray[11]));
-        String eType = "";
-        if (etherArray[12] == 8 && etherArray[13] == 0) {
-            eType = "IP";
-        } else {
-            eType = "Unknown";
+        String protocol = String.format("%02x%02x", etherArray[12], etherArray[13]);
+        switch (protocol) {
+            case "0800" -> {
+                protocol = "IPv4";
+                Pktsniffer.nextHeader = "isIP";
+            }
+            case "86dd" -> {
+                protocol = "IPv6";
+                Pktsniffer.nextHeader = "isIP";
+            }
+            default -> {
+                protocol = "Unknown";
+            }
         }
-        etherMSG.append(String.format(etherType, etherArray[12], etherArray[13], eType));
+
+        etherMSG.append(String.format(etherType, etherArray[12], etherArray[13], protocol));
         etherMSG.append(etherBreak);
         System.out.println(etherMSG);
     }

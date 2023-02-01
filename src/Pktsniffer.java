@@ -21,10 +21,18 @@ public class Pktsniffer {
     public static final String title = "%s:  ----- %s Header -----\n";
     public EtherFrame etherFrame;
     public IPStack ipStack;
+    public TCPSegment tcpSegment;
+    public UDPDatagram udpDatagram;
+    public ICMPSegment icmpSegment;
+    public static String nextHeader;
+    public static boolean endOfPacket = false;
 
     public Pktsniffer() {
         this.etherFrame = new EtherFrame();
         this.ipStack = new IPStack();
+        this.tcpSegment = new TCPSegment();
+        this.udpDatagram = new UDPDatagram();
+        this.icmpSegment = new ICMPSegment();
     }
 
     public static void main(String[] args) {
@@ -92,10 +100,13 @@ public class Pktsniffer {
                     if (input == -1) {
                         break;
                     }
-                    System.out.printf("%02x\n", input);
                     counter++; // track how many bytes are read
+                    System.out.printf("%02x ", input);
+                    if (Math.floorMod(counter, 8) == 0) {
+                        System.out.println();
+                    }
                 }
-                System.out.printf("Read %d bytes.\n", counter);
+                System.out.printf("\nRead %d bytes.\n", counter);
             } else {
                 // reading in pcap file header (24 bytes) and packet record (16 bytes)
                 byte[] pcapHeader = new byte[40];
@@ -108,26 +119,20 @@ public class Pktsniffer {
                 // protocols are in packet (ether, TCP, IP, etc), then set flags
                 // to only make the applicable parse calls
 
-                // read/parse ethernet frame
-                byte[] etherArray = new byte[14];
-                dataIn.read(etherArray);
-                // capture packet size for ether header
-                int packetSize = pcapHeader[32];
-                this.etherFrame.parseEther(etherArray, packetSize);
+                String pktSizeStr = String.format("%02x%02x%02x%02x",
+                        pcapHeader[35], pcapHeader[34], pcapHeader[33], pcapHeader[32]);
+                int pktSizeInt = Integer.parseInt(pktSizeStr, 16);
+                this.isEther(dataIn, pktSizeInt);
 
-                // read/parse IP stack
-                byte[] ipArray = new byte[20];
-                dataIn.read(ipArray);
-                this.ipStack.parseIP(ipArray);
-
-                // read/parse TCP segment
-                //TODO
-
-                // read/parse UDP segment
-                //TODO
-
-                // read/parse ICMP segment
-                //TODO
+                while (!endOfPacket) {
+                    switch (nextHeader) {
+                        case "isIP" -> this.isIP(dataIn);
+                        case "isTCP" -> this.isTCP(dataIn);
+                        case "isUDP" -> this.isUDP(dataIn);
+                        case "isICMP" -> this.isICMP(dataIn);
+                        case "Unknown" -> usageAndExit(false);
+                    }
+                }
             }
         } catch (FileNotFoundException fNFE) {
             System.err.println("File not found. Program ending.");
@@ -137,6 +142,45 @@ public class Pktsniffer {
             System.exit(-1);
         }
     }
+
+    public void isEther(FileInputStream dataIn, int packetSize) throws IOException {
+        // read/parse ethernet frame
+        byte[] etherArray = new byte[14];
+        dataIn.read(etherArray);
+        this.etherFrame.parseEther(etherArray, packetSize);
+    }
+
+    public void isIP(FileInputStream dataIn) throws IOException {
+        // read/parse IP stack
+        byte[] ipArray = new byte[20];
+        dataIn.read(ipArray);
+        this.ipStack.parseIP(ipArray);
+    }
+
+    public void isTCP(FileInputStream dataIn) throws IOException {
+        // read/parse TCP segment
+        byte[] tcpArray = new byte[20];
+        dataIn.read(tcpArray);
+        this.tcpSegment.parseTCP(tcpArray);
+        Pktsniffer.endOfPacket = true;
+    }
+
+    public void isUDP(FileInputStream dataIn) throws IOException {
+        // read/parse UDP segment
+        byte[] udpArray = new byte[8];
+        dataIn.read(udpArray);
+        this.udpDatagram.parseUDP(udpArray);
+        Pktsniffer.endOfPacket = true;
+    }
+
+    public void isICMP(FileInputStream dataIn) throws IOException {
+        // read/parse ICMP segment
+        byte[] icmpArray = new byte[8];
+        dataIn.read(icmpArray);
+        this.icmpSegment.parseICMP(icmpArray);
+        Pktsniffer.endOfPacket = true;
+    }
+
 
     public void outputResults() {
         System.out.println("\nFile analyzed: " + filename);
