@@ -23,28 +23,34 @@ public class TCPSegment {
     public String tcpOptions = "TCP:  %s\n";
     public String tcpOptionStr = "Unknown";
 
-    public void parseTCP(byte[] tcpArray) {
+    public StringBuilder parseTCP(byte[] tcpArray) {
         StringBuilder tcpMSG = new StringBuilder(tcpTitle);
         tcpMSG.append(tcpBreak + "\n");
 
         // add byte 0 and 1 for source port
         String sPortHex = String.format("%02x%02x", tcpArray[0], tcpArray[1]);
         int sPortInt = Integer.parseInt(sPortHex, 16);
+        if (Pktsniffer.port == -1 || sPortInt == Pktsniffer.port) {
+            Pktsniffer.correctPort = true;
+        }
         tcpMSG.append(String.format(sourcePort, sPortInt));
 
         // add byte 2 and 3 for destination port
         String dPortHex = String.format("%02x%02x", tcpArray[2], tcpArray[3]);
         int dPortInt = Integer.parseInt(dPortHex, 16);
+        if (Pktsniffer.port == -1 || dPortInt == Pktsniffer.port) {
+            Pktsniffer.correctPort = true;
+        }
         tcpMSG.append(String.format(destPort, dPortInt));
 
         // add byte 4-7 for sequence number
-        String seqHex = String.format("%x%x%x%x", tcpArray[4], tcpArray[5],
+        String seqHex = String.format("%02x%02x%02x%02x", tcpArray[4], tcpArray[5],
                 tcpArray[6], tcpArray[7]);
         BigInteger seqInt = new BigInteger(seqHex, 16);
         tcpMSG.append(String.format(seqNum, seqInt));
 
         // add byte 4-7 for acknowledgement number
-        String ackHex = String.format("%x%x%x%x", tcpArray[8], tcpArray[9],
+        String ackHex = String.format("%02x%02x%02x%02x", tcpArray[8], tcpArray[9],
                 tcpArray[10], tcpArray[11]);
         BigInteger ackInt = new BigInteger(ackHex, 16);
         tcpMSG.append(String.format(ackNum, ackInt));
@@ -97,11 +103,11 @@ public class TCPSegment {
 
         tcpMSG.append(String.format(tcpOptions, tcpOptionStr));
 
-        tcpMSG.append(tcpBreak);
+        tcpMSG.append(tcpBreak + "\n");
 
         // reset values
         tcpOptionStr = "Unknown";
-
-        System.out.println(tcpMSG);
+        Pktsniffer.nextHeader = "isEnd";
+        return tcpMSG;
     }
 }

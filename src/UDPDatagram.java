@@ -7,7 +7,7 @@ public class UDPDatagram {
     public String checkSumUDP = "UDP:  Checksum = 0x%s\n";
 
 
-    public void parseUDP(byte[] udpArray) {
+    public StringBuilder parseUDP(byte[] udpArray) {
         StringBuilder udpMSG = new StringBuilder(udpTitle);
         udpMSG.append(udpBreak + "\n");
 
@@ -19,17 +19,24 @@ public class UDPDatagram {
         // add byte 2 and 3 for destination port
         String dPortHex = String.format("%02x%02x", udpArray[2], udpArray[3]);
         int dPortInt = Integer.parseInt(dPortHex, 16);
+        if (Pktsniffer.port == -1 || dPortInt == Pktsniffer.port) {
+            Pktsniffer.correctPort = true;
+        }
         udpMSG.append(String.format(destPort, dPortInt));
 
         // add byte 4 and 5 for length
         String lenHex = String.format("%02x%02x", udpArray[4], udpArray[5]);
         int lenInt = Integer.parseInt(lenHex, 16);
+        if (Pktsniffer.port == -1 || lenInt == Pktsniffer.port) {
+            Pktsniffer.correctPort = true;
+        }
         udpMSG.append(String.format(length, lenInt));
 
         String checkSumHex = String.format("%02x%02x", udpArray[6], udpArray[7]);
         udpMSG.append(String.format(checkSumUDP, checkSumHex));
 
-        udpMSG.append(udpBreak);
-        System.out.println(udpMSG);
+        udpMSG.append(udpBreak + "\n");
+        Pktsniffer.nextHeader = "isEnd";
+        return udpMSG;
     }
 }

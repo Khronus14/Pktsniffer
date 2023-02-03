@@ -1,4 +1,4 @@
-public class IPStack {
+public class IPPacket {
     public final String ipTitle = String.format(Pktsniffer.title, "IP", "IP");
     public final String ipBreak = "IP:";
     public String versionIP = "IP:  Version = %c\n";
@@ -26,7 +26,7 @@ public class IPStack {
     public String ipOptions = "IP:  %s\n";
     public String optionStr = "Unknown";
 
-    public void parseIP(byte[] ipArray) {
+    public StringBuilder parseIP(byte[] ipArray) {
         StringBuilder iPMSG = new StringBuilder(ipTitle);
         iPMSG.append(ipBreak + "\n");
 
@@ -122,7 +122,7 @@ public class IPStack {
                 Integer.parseInt(String.format("%x", ipArray[18]), 16),
                 Integer.parseInt(String.format("%x", ipArray[19]), 16)));
         iPMSG.append(String.format(ipOptions, optionStr));
-        iPMSG.append(ipBreak);
-        System.out.println(iPMSG);
+        iPMSG.append(ipBreak + "\n");
+        return iPMSG;
     }
 }

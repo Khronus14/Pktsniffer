@@ -5,7 +5,7 @@ public class ICMPSegment {
     public String codeICMP = "TCP:  Code = %d\n";
     public String checkSumTCP = "ICMP:  Checksum = 0x%s\n";
 
-    public void parseICMP(byte[] icmpArray) {
+    public StringBuilder parseICMP(byte[] icmpArray) {
         StringBuilder icmpMSG = new StringBuilder(icmpTitle);
         icmpMSG.append(icmpBreak + "\n");
 
@@ -18,7 +18,9 @@ public class ICMPSegment {
         String checkSumHex = String.format("%02x%02x", icmpArray[2], icmpArray[3]);
         icmpMSG.append(String.format(checkSumTCP, checkSumHex));
 
-        icmpMSG.append(icmpBreak);
-        System.out.println(icmpMSG);
+        icmpMSG.append(icmpBreak + "\n");
+        Pktsniffer.nextHeader = "isEnd";
+
+        return icmpMSG;
     }
 }

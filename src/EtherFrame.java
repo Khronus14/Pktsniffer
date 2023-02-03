@@ -6,7 +6,7 @@ public class EtherFrame {
     public final String sourceMAC = "ETHER:  Source = %02x:%02x:%02x:%02x:%02x:%02x\n";
     public final String etherType = "ETHER:  Ethertype = %02x%02x (%s)\n";
 
-    public void parseEther(byte[] etherArray, int packetSize) {
+    public StringBuilder parseEther(byte[] etherArray, int packetSize) {
         StringBuilder etherMSG = new StringBuilder(etherTitle);
         etherMSG.append(etherBreak + "\n");
         etherMSG.append(String.format(pktSize, packetSize));
@@ -30,7 +30,7 @@ public class EtherFrame {
         }
 
         etherMSG.append(String.format(etherType, etherArray[12], etherArray[13], protocol));
-        etherMSG.append(etherBreak);
-        System.out.println(etherMSG);
+        etherMSG.append(etherBreak + "\n");
+        return etherMSG;
     }
 }
