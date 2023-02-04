@@ -165,7 +165,8 @@ public class Pktsniffer {
         // reading in pcap file header (24 bytes) and packet record (16 bytes)
         byte[] pcapHeader = new byte[24];
         dataIn.read(pcapHeader);
-        if (pcapHeader[20] != 1) {
+        final int ethernetType = 1; // Link-Layer header type
+        if (pcapHeader[20] != ethernetType) {
             System.out.println("LinkType not recognized in file header.");
             System.exit(0);
         }
