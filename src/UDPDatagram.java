@@ -1,13 +1,12 @@
 public class UDPDatagram {
-    public final String udpTitle = String.format(Pktsniffer.title, "UDP", "UDP");
-    public final String udpBreak = "UDP:";
-    public String sourcePort = "UDP:  Source port = %d\n";
-    public String destPort = "UDP:  Destination port = %d\n";
-    public String length = "UDP:  Length = %d\n";
-    public String checkSumUDP = "UDP:  Checksum = 0x%s\n";
+    private static final String udpTitle = String.format(Pktsniffer.title, "UDP", "UDP");
+    private static final String udpBreak = "UDP:";
+    private static final String sourcePort = "UDP:  Source port = %d\n";
+    private static final String destPort = "UDP:  Destination port = %d\n";
+    private static final String length = "UDP:  Length = %d\n";
+    private static final String checkSumUDP = "UDP:  Checksum = 0x%s\n";
 
-
-    public StringBuilder parseUDP(byte[] udpArray) {
+    public static StringBuilder parseUDP(byte[] udpArray) {
         StringBuilder udpMSG = new StringBuilder(udpTitle);
         udpMSG.append(udpBreak + "\n");
 

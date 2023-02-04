@@ -1,32 +1,31 @@
 public class IPPacket {
-    public final String ipTitle = String.format(Pktsniffer.title, "IP", "IP");
-    public final String ipBreak = "IP:";
-    public String versionIP = "IP:  Version = %c\n";
-    public String headerLength = "IP:  Header length = %s bytes\n";
-    public String typeOfService = """
+    private static final String ipTitle = String.format(Pktsniffer.title, "IP", "IP");
+    private static final String ipBreak = "IP:";
+    private static final String versionIP = "IP:  Version = %c\n";
+    private static final String headerLength = "IP:  Header length = %s bytes\n";
+    private static final String typeOfService = """
                             IP:  Type of service = 0x%s
                             IP:     xxx. .... = %s (precedence)
                             IP:     ...%s .... = %s
                             IP:     .... %s... = %s
                             IP:     .... .%s.. = %s
                             """;
-    public String totalLength = "IP:  Total length = %d bytes\n";
-    public String identification = "IP:  Identification = %d\n";
-    public String ipFlags = """
+    private static final String totalLength = "IP:  Total length = %d bytes\n";
+    private static final String identification = "IP:  Identification = %d\n";
+    private static final String ipFlags = """
                             IP:  Flags = 0x%s
                             IP:    .%s.. .... = do%s fragment
                             IP:    ..%s. .... = %s
                             """;
-    public String fragmentOff = "IP:  Fragment offset = %d bytes\n";
-    public String tTL = "IP:  Time to live = %d seconds/hops\n";
-    public String protocol = "IP:  Protocol = %s\n";
-    public String checkSumIP = "IP:  Header checksum = %s\n";
-    public String sourceAdd = "IP:  Source address = %d.%d.%d.%d\n";
-    public String destAdd = "IP:  Destination address = %d.%d.%d.%d\n";
-    public String ipOptions = "IP:  %s\n";
-    public String optionStr = "Unknown";
+    private static final String fragmentOff = "IP:  Fragment offset = %d bytes\n";
+    private static final String tTL = "IP:  Time to live = %d seconds/hops\n";
+    private static final String protocol = "IP:  Protocol = %s\n";
+    private static final String checkSumIP = "IP:  Header checksum = %s\n";
+    private static final String sourceAdd = "IP:  Source address = %d.%d.%d.%d\n";
+    private static final String destAdd = "IP:  Destination address = %d.%d.%d.%d\n";
+    private static final String ipOptions = "IP:  %s\n";
 
-    public StringBuilder parseIP(byte[] ipArray) {
+    public static StringBuilder parseIP(byte[] ipArray) {
         StringBuilder iPMSG = new StringBuilder(ipTitle);
         iPMSG.append(ipBreak + "\n");
 
@@ -34,6 +33,7 @@ public class IPPacket {
         String ver_lenByte = String.format("%x", ipArray[0]);
         iPMSG.append(String.format(versionIP, ver_lenByte.charAt(0)));
         String headerLen = "Unknown";
+        String optionStr = "Unknown";
         if (ver_lenByte.charAt(1) == '5') {
             headerLen = "20";
             optionStr = "No options";
@@ -111,17 +111,17 @@ public class IPPacket {
         String checkSumHex = String.format("%02x%02x", ipArray[10], ipArray[11]);
         iPMSG.append(String.format(checkSumIP, checkSumHex));
 
-        int[] sourceIP = this.parseIPAdd(ipArray, 12);
+        int[] sourceIP = parseIPAdd(ipArray, 12);
         iPMSG.append(String.format(sourceAdd,
                 sourceIP[0], sourceIP[1], sourceIP[2], sourceIP[3]));
 
-        int[] destIP = this.parseIPAdd(ipArray, 16);
+        int[] destIP = parseIPAdd(ipArray, 16);
         iPMSG.append(String.format(destAdd,
                 destIP[0], destIP[1], destIP[2], destIP[3]));
 
         if (Pktsniffer.hostAddress != null || Pktsniffer.netAddress != null) {
-            this.checkIPAdd(sourceIP);
-            this.checkIPAdd(destIP);
+            checkIPAdd(sourceIP);
+            checkIPAdd(destIP);
         }
 
         iPMSG.append(String.format(ipOptions, optionStr));
@@ -129,7 +129,7 @@ public class IPPacket {
         return iPMSG;
     }
 
-    private int[] parseIPAdd(byte[] ipArray, int ipIndex) {
+    private static int[] parseIPAdd(byte[] ipArray, int ipIndex) {
         int[] addArray = new int[4];
         int maxIndex = ipIndex + 4;
         for (int count = 0; ipIndex < maxIndex; count++, ipIndex++) {
@@ -138,7 +138,7 @@ public class IPPacket {
         return addArray;
     }
 
-    private void checkIPAdd(int[] ipAdd) {
+    private static void checkIPAdd(int[] ipAdd) {
         if (Pktsniffer.hostAddress != null) {
             if (ipAdd[0] == Pktsniffer.hostAddress[0] &&
                     ipAdd[1] == Pktsniffer.hostAddress[1] &&

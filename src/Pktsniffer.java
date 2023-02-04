@@ -10,41 +10,30 @@ import java.util.Optional;
  */
 
 public class Pktsniffer {
-    public static String filename;
-    public int packetCount = -1;
-    public int printedPkts = 0;
     public static int[] hostAddress;
     public static boolean hostMatch = false;
     public static int port = -1;
     public static boolean correctPort = false;
-    public boolean checkHeader = false;
-    public boolean checkForIP = false;
-    public boolean ipInPacket = false;
-    public boolean checkForTCP = false;
-    public boolean tcpInPacket = false;
-    public boolean checkForUDP = false;
-    public boolean udpInPacket = false;
-    public boolean checkForICMP = false;
-    public boolean icmpInPacket = false;
     public static int[] netAddress;
     public static boolean netMatch = false;
     public static final String title = "%s:  ----- %s Header -----\n";
-    public EtherFrame etherFrame;
-    public IPPacket ipPacket;
-    public TCPSegment tcpSegment;
-    public UDPDatagram udpDatagram;
-    public ICMPSegment icmpSegment;
     public static String nextHeader;
-    public static boolean endOfPacket = false;
-    public int payload;
 
-    public Pktsniffer() {
-        this.etherFrame = new EtherFrame();
-        this.ipPacket = new IPPacket();
-        this.tcpSegment = new TCPSegment();
-        this.udpDatagram = new UDPDatagram();
-        this.icmpSegment = new ICMPSegment();
-    }
+    private static boolean endOfPacket = false;
+    private static String filename;
+
+    private int packetCount = -1;
+    private int printedPkts = 0;
+    private boolean checkHeader = false;
+    private boolean checkForIP = false;
+    private boolean ipInPacket = false;
+    private boolean checkForTCP = false;
+    private boolean tcpInPacket = false;
+    private boolean checkForUDP = false;
+    private boolean udpInPacket = false;
+    private boolean checkForICMP = false;
+    private boolean icmpInPacket = false;
+    private int payload;
 
     public static void main(String[] args) {
         Pktsniffer pktsniffer = new Pktsniffer();
@@ -225,7 +214,7 @@ public class Pktsniffer {
         byte[] etherArray = new byte[14];
         this.payload -= 14;
         dataIn.read(etherArray);
-        return this.etherFrame.parseEther(etherArray, packetSize);
+        return EtherFrame.parseEther(etherArray, packetSize);
     }
 
     /**
@@ -240,7 +229,7 @@ public class Pktsniffer {
         byte[] ipArray = new byte[20];
         this.payload -= 20;
         dataIn.read(ipArray);
-        return this.ipPacket.parseIP(ipArray);
+        return IPPacket.parseIP(ipArray);
     }
 
     /**
@@ -255,7 +244,7 @@ public class Pktsniffer {
         byte[] tcpArray = new byte[20];
         this.payload -= 20;
         dataIn.read(tcpArray);
-        return this.tcpSegment.parseTCP(tcpArray);
+        return TCPSegment.parseTCP(tcpArray);
     }
 
     /**
@@ -270,7 +259,7 @@ public class Pktsniffer {
         byte[] udpArray = new byte[8];
         this.payload -= 8;
         dataIn.read(udpArray);
-        return this.udpDatagram.parseUDP(udpArray);
+        return UDPDatagram.parseUDP(udpArray);
     }
 
     /**
@@ -285,7 +274,7 @@ public class Pktsniffer {
         byte[] icmpArray = new byte[8];
         this.payload -= 8;
         dataIn.read(icmpArray);
-        return this.icmpSegment.parseICMP(icmpArray);
+        return ICMPSegment.parseICMP(icmpArray);
     }
 
     /**
