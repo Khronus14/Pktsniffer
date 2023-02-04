@@ -21,8 +21,8 @@ public class IPPacket {
     public String tTL = "IP:  Time to live = %d seconds/hops\n";
     public String protocol = "IP:  Protocol = %s\n";
     public String checkSumIP = "IP:  Header checksum = %s\n";
-    public String sourceAdd = "IP:  Source address = %d:%d:%d:%d\n";
-    public String destAdd = "IP:  Destination address = %d:%d:%d:%d\n";
+    public String sourceAdd = "IP:  Source address = %d.%d.%d.%d\n";
+    public String destAdd = "IP:  Destination address = %d.%d.%d.%d\n";
     public String ipOptions = "IP:  %s\n";
     public String optionStr = "Unknown";
 
@@ -111,18 +111,48 @@ public class IPPacket {
         String checkSumHex = String.format("%02x%02x", ipArray[10], ipArray[11]);
         iPMSG.append(String.format(checkSumIP, checkSumHex));
 
+        int[] sourceIP = this.parseIPAdd(ipArray, 12);
         iPMSG.append(String.format(sourceAdd,
-                Integer.parseInt(String.format("%x", ipArray[12]), 16),
-                Integer.parseInt(String.format("%x", ipArray[13]), 16),
-                Integer.parseInt(String.format("%x", ipArray[14]), 16),
-                Integer.parseInt(String.format("%x", ipArray[15]), 16)));
+                sourceIP[0], sourceIP[1], sourceIP[2], sourceIP[3]));
+
+        int[] destIP = this.parseIPAdd(ipArray, 16);
         iPMSG.append(String.format(destAdd,
-                Integer.parseInt(String.format("%x", ipArray[16]), 16),
-                Integer.parseInt(String.format("%x", ipArray[17]), 16),
-                Integer.parseInt(String.format("%x", ipArray[18]), 16),
-                Integer.parseInt(String.format("%x", ipArray[19]), 16)));
+                destIP[0], destIP[1], destIP[2], destIP[3]));
+
+        if (Pktsniffer.hostAddress != null || Pktsniffer.netAddress != null) {
+            this.checkIPAdd(sourceIP);
+            this.checkIPAdd(destIP);
+        }
+
         iPMSG.append(String.format(ipOptions, optionStr));
         iPMSG.append(ipBreak + "\n");
         return iPMSG;
+    }
+
+    private int[] parseIPAdd(byte[] ipArray, int ipIndex) {
+        int[] addArray = new int[4];
+        int maxIndex = ipIndex + 4;
+        for (int count = 0; ipIndex < maxIndex; count++, ipIndex++) {
+            addArray[count] = Integer.parseInt(String.format("%x", ipArray[ipIndex]), 16);
+        }
+        return addArray;
+    }
+
+    private void checkIPAdd(int[] ipAdd) {
+        if (Pktsniffer.hostAddress != null) {
+            if (ipAdd[0] == Pktsniffer.hostAddress[0] &&
+                    ipAdd[1] == Pktsniffer.hostAddress[1] &&
+                    ipAdd[2] == Pktsniffer.hostAddress[2] &&
+                    ipAdd[3] == Pktsniffer.hostAddress[3]) {
+                Pktsniffer.hostMatch = true;
+            }
+        }
+        if (Pktsniffer.netAddress != null) {
+            if (ipAdd[0] == Pktsniffer.netAddress[0] &&
+                    ipAdd[1] == Pktsniffer.netAddress[1] &&
+                    ipAdd[2] == Pktsniffer.netAddress[2]) {
+                Pktsniffer.netMatch = true;
+            }
+        }
     }
 }
