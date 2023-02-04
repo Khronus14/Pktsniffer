@@ -92,17 +92,17 @@ public class Pktsniffer {
                         [int].[int].[int].[int]""");
             System.exit(1);
         }
+        int[] toParse;
         if (isNet) {
-            netAddress = new int[3];
-            netAddress[0] = Integer.parseInt(addArray[0]);
-            netAddress[1] = Integer.parseInt(addArray[1]);
-            netAddress[2] = Integer.parseInt(addArray[2]);
+            toParse = new int[3];
+            netAddress = toParse;
         } else {
-            hostAddress = new int[4];
-            hostAddress[0] = Integer.parseInt(addArray[0]);
-            hostAddress[1] = Integer.parseInt(addArray[1]);
-            hostAddress[2] = Integer.parseInt(addArray[2]);
-            hostAddress[3] = Integer.parseInt(addArray[3]);
+            toParse = new int[4];
+            hostAddress = toParse;
+        }
+
+        for (int i = 0; i < toParse.length; ++i) {
+            toParse[i] = Integer.parseInt(addArray[i]);
         }
     }
 
@@ -119,7 +119,7 @@ public class Pktsniffer {
         try (FileInputStream dataIn = new FileInputStream(pcapFile)) {
             boolean debug = false;
             if (debug) {
-                this.runDebug(dataIn);
+                runDebug(dataIn);
             } else {
                 this.analyzePacket(dataIn);
             }
@@ -137,7 +137,7 @@ public class Pktsniffer {
      * @param dataIn input file
      * @throws IOException
      */
-    private void runDebug(FileInputStream dataIn) throws IOException {
+    private static void runDebug(FileInputStream dataIn) throws IOException {
         int input;
         int counter = 0;
         System.out.printf("Byte %03d:  ", counter);
@@ -212,7 +212,7 @@ public class Pktsniffer {
     public StringBuilder isEther(FileInputStream dataIn, int packetSize) throws IOException {
         // read/parse ethernet frame
         byte[] etherArray = new byte[14];
-        this.payload -= 14;
+        this.payload -= etherArray.length;
         dataIn.read(etherArray);
         return EtherFrame.parseEther(etherArray, packetSize);
     }
@@ -227,7 +227,7 @@ public class Pktsniffer {
         // read/parse IP stack
         this.ipInPacket = true;
         byte[] ipArray = new byte[20];
-        this.payload -= 20;
+        this.payload -= ipArray.length;
         dataIn.read(ipArray);
         return IPPacket.parseIP(ipArray);
     }
@@ -242,7 +242,7 @@ public class Pktsniffer {
         // read/parse TCP segment
         this.tcpInPacket = true;
         byte[] tcpArray = new byte[20];
-        this.payload -= 20;
+        this.payload -= tcpArray.length;
         dataIn.read(tcpArray);
         return TCPSegment.parseTCP(tcpArray);
     }
@@ -257,7 +257,7 @@ public class Pktsniffer {
         // read/parse UDP segment
         this.udpInPacket = true;
         byte[] udpArray = new byte[8];
-        this.payload -= 8;
+        this.payload -= udpArray.length;
         dataIn.read(udpArray);
         return UDPDatagram.parseUDP(udpArray);
     }
@@ -272,7 +272,7 @@ public class Pktsniffer {
         // read/parse ICMP segment
         this.icmpInPacket = true;
         byte[] icmpArray = new byte[8];
-        this.payload -= 8;
+        this.payload -= icmpArray.length;
         dataIn.read(icmpArray);
         return ICMPSegment.parseICMP(icmpArray);
     }
