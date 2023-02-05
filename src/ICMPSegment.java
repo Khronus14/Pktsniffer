@@ -1,11 +1,11 @@
 public class ICMPSegment {
-    public final String icmpTitle = String.format(Pktsniffer.title, "ICMP", "ICMP");
-    public final String icmpBreak = "ICMP:";
-    public String typeICMP = "TCP:  Type = %d\n";
-    public String codeICMP = "TCP:  Code = %d\n";
-    public String checkSumTCP = "ICMP:  Checksum = 0x%s\n";
+    private static final String icmpTitle = String.format(Pktsniffer.title, "ICMP", "ICMP");
+    private static final String icmpBreak = "ICMP:";
+    private static final String typeICMP = "TCP:  Type = %d\n";
+    private static final String codeICMP = "TCP:  Code = %d\n";
+    private static final String checkSumTCP = "ICMP:  Checksum = 0x%s\n";
 
-    public StringBuilder parseICMP(byte[] icmpArray) {
+    public static StringBuilder parseICMP(byte[] icmpArray) {
         StringBuilder icmpMSG = new StringBuilder(icmpTitle);
         icmpMSG.append(icmpBreak + "\n");
 

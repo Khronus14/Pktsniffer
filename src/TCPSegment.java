@@ -1,14 +1,14 @@
 import java.math.BigInteger;
 
 public class TCPSegment {
-    public final String tcpTitle = String.format(Pktsniffer.title, "TCP", "TCP");
-    public final String tcpBreak = "TCP:";
-    public String sourcePort = "TCP:  Source port = %d\n";
-    public String destPort = "TCP:  Destination port = %d\n";
-    public String seqNum = "TCP:  Sequence number = %d\n";
-    public String ackNum = "TCP:  Acknowledgment number = %d\n";
-    public String dataOffset = "TCP:  Data offset = %s bytes\n";
-    public String tcpFlags = """
+    private static final String tcpTitle = String.format(Pktsniffer.title, "TCP", "TCP");
+    private static final String tcpBreak = "TCP:";
+    private static final String sourcePort = "TCP:  Source port = %d\n";
+    private static final String destPort = "TCP:  Destination port = %d\n";
+    private static final String seqNum = "TCP:  Sequence number = %d\n";
+    private static final String ackNum = "TCP:  Acknowledgment number = %d\n";
+    private static final String dataOffset = "TCP:  Data offset = %s bytes\n";
+    private static final String tcpFlags = """
                              TCP:  Flags = 0x%s
                              TCP:    ..%s. .... = %s pointer
                              TCP:    ...%s .... = %s
@@ -17,13 +17,12 @@ public class TCPSegment {
                              TCP:    .... ..%s. = %s
                              TCP:    .... ...%s = %s
                              """;
-    public String window = "TCP:  Window = %d\n";
-    public String checkSumTCP = "TCP:  Checksum = 0x%s\n";
-    public String urgentPointer = "TCP:  Urgent pointer = %s\n";
-    public String tcpOptions = "TCP:  %s\n";
-    public String tcpOptionStr = "Unknown";
+    private static final String window = "TCP:  Window = %d\n";
+    private static final String checkSumTCP = "TCP:  Checksum = 0x%s\n";
+    private static final String urgentPointer = "TCP:  Urgent pointer = %s\n";
+    private static final String tcpOptions = "TCP:  %s\n";
 
-    public StringBuilder parseTCP(byte[] tcpArray) {
+    public static StringBuilder parseTCP(byte[] tcpArray) {
         StringBuilder tcpMSG = new StringBuilder(tcpTitle);
         tcpMSG.append(tcpBreak + "\n");
 
@@ -58,6 +57,7 @@ public class TCPSegment {
         // separate byte to parse first bit for data offset
         String dataOffStr = String.format("%02x", tcpArray[12]);
         String offsetLen = "Unknown";
+        String tcpOptionStr = "Unknown";
         if (dataOffStr.charAt(0) == '5') {
             offsetLen = "20";
             tcpOptionStr = "No options";
@@ -106,7 +106,6 @@ public class TCPSegment {
         tcpMSG.append(tcpBreak + "\n");
 
         // reset values
-        tcpOptionStr = "Unknown";
         Pktsniffer.nextHeader = "isEnd";
         return tcpMSG;
     }

@@ -1,12 +1,12 @@
 public class EtherFrame {
-    public final String etherTitle = String.format(Pktsniffer.title, "ETHER", "Ether");
-    public final String etherBreak = "ETHER:";
-    public final String pktSize = "ETHER:  Packet size = %d bytes\n";
-    public final String destMAC = "ETHER:  Destination = %02x:%02x:%02x:%02x:%02x:%02x\n";
-    public final String sourceMAC = "ETHER:  Source = %02x:%02x:%02x:%02x:%02x:%02x\n";
-    public final String etherType = "ETHER:  Ethertype = %02x%02x (%s)\n";
+    private static final String etherTitle = String.format(Pktsniffer.title, "ETHER", "Ether");
+    private static final String etherBreak = "ETHER:";
+    private static final String pktSize = "ETHER:  Packet size = %d bytes\n";
+    private static final String destMAC = "ETHER:  Destination = %02x:%02x:%02x:%02x:%02x:%02x\n";
+    private static final String sourceMAC = "ETHER:  Source = %02x:%02x:%02x:%02x:%02x:%02x\n";
+    private static final String etherType = "ETHER:  Ethertype = %02x%02x (%s)\n";
 
-    public StringBuilder parseEther(byte[] etherArray, int packetSize) {
+    public static StringBuilder parseEther(byte[] etherArray, int packetSize) {
         StringBuilder etherMSG = new StringBuilder(etherTitle);
         etherMSG.append(etherBreak + "\n");
         etherMSG.append(String.format(pktSize, packetSize));
