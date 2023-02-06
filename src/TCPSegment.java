@@ -1,8 +1,17 @@
+/**
+ * Support class for Pktsniffer. Handles parsing TCP segment header.
+ * Parsing is based on RFC 793, dated September 1981
+ *
+ * Project 1 for CSCI 651
+ *
+ * @author David D. Robinson, ddr6248@rit.edu
+ */
+
 import java.math.BigInteger;
 
 public class TCPSegment {
     private static final String tcpTitle = String.format(Pktsniffer.title, "TCP", "TCP");
-    private static final String tcpBreak = "TCP:";
+    private static final String tcpBreak = "TCP:\n";
     private static final String sourcePort = "TCP:  Source port = %d\n";
     private static final String destPort = "TCP:  Destination port = %d\n";
     private static final String seqNum = "TCP:  Sequence number = %d\n";
@@ -22,9 +31,13 @@ public class TCPSegment {
     private static final String urgentPointer = "TCP:  Urgent pointer = %s\n";
     private static final String tcpOptions = "TCP:  Options = %s\n";
 
-    public static StringBuilder parseTCP(byte[] tcpArray) {
-        StringBuilder tcpMSG = new StringBuilder(tcpTitle);
-        tcpMSG.append(tcpBreak + "\n");
+    /**
+     * Function to parse TCP segment header.
+     * @param tcpArray byte array containing TCP header
+     * @param tcpMSG formatted string for output
+     */
+    public static void parseTCP(byte[] tcpArray, StringBuilder tcpMSG) {
+        tcpMSG.append(tcpTitle).append(tcpBreak);
 
         // add byte 0 and 1 for source port
         String sPortHex = String.format("%02x%02x", tcpArray[0], tcpArray[1]);
@@ -48,13 +61,13 @@ public class TCPSegment {
         BigInteger seqInt = new BigInteger(seqHex, 16);
         tcpMSG.append(String.format(seqNum, seqInt));
 
-        // add byte 4-7 for acknowledgement number
+        // add byte 8-11 for acknowledgement number
         String ackHex = String.format("%02x%02x%02x%02x", tcpArray[8], tcpArray[9],
                 tcpArray[10], tcpArray[11]);
         BigInteger ackInt = new BigInteger(ackHex, 16);
         tcpMSG.append(String.format(ackNum, ackInt));
 
-        // separate byte to parse first bit for data offset
+        // separate byte 12 to parse first bit for data offset
         String dataOffStr = String.format("%02x", tcpArray[12]);
         String offsetLen = "Unknown";
         String tcpOptionStr = "Unknown";
@@ -94,14 +107,16 @@ public class TCPSegment {
                 step4.charAt(3), reset, step4.charAt(4), sync,
                 step4.charAt(5), fin));
 
-        // add byte 14 and 15 for window size
+        // byte 14 and 15 for window size
         String winHex = String.format("%02x%02x", tcpArray[14], tcpArray[15]);
         int winInt = Integer.parseInt(winHex, 16);
         tcpMSG.append(String.format(window, winInt));
 
+        // byte 16 and 17 for check sum
         String checkSumHex = String.format("%02x%02x", tcpArray[16], tcpArray[17]);
         tcpMSG.append(String.format(checkSumTCP, checkSumHex));
 
+        // byte 18 and 19 for pointer
         String pointer = "0";
         if (urgent.equals("Urgent")) {
             pointer = String.format("%02x%02x", tcpArray[18], tcpArray[19]);
@@ -109,15 +124,8 @@ public class TCPSegment {
         tcpMSG.append(String.format(urgentPointer, pointer));
 
         tcpMSG.append(String.format(tcpOptions, tcpOptionStr));
+        tcpMSG.append(tcpBreak);
 
-        tcpMSG.append(tcpBreak + "\n");
-
-        // reset values
         Pktsniffer.nextHeader = "isEnd";
-        return tcpMSG;
-    }
-
-    private void readOptions() {
-        //TODO
     }
 }

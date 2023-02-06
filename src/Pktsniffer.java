@@ -33,6 +33,7 @@ public class Pktsniffer {
     private boolean udpInPacket = false;
     private boolean checkForICMP = false;
     private boolean icmpInPacket = false;
+    private static boolean debug = false;
     private static int payload;
 
     public static void main(String[] args) {
@@ -58,9 +59,15 @@ public class Pktsniffer {
                     case "-host" -> this.parseAddress(args[index + 1], false);
                     case "-port" -> port = Integer.parseInt(args[index + 1]);
                     case "-net" -> this.parseAddress(args[index + 1], true);
+                    case "-debug" -> debug = true;
                     case "-ip", "-tcp", "-udp", "-icmp" -> {
                         this.setFilter(args[index]);
                         index--;
+                    }
+                    default -> {
+                        System.out.println("Argument not recognized:  " + args[index]);
+                        System.out.println("Refer to documentation for proper usage.");
+                        System.exit(0);
                     }
                 }
                 index += 2;
@@ -68,7 +75,7 @@ public class Pktsniffer {
         } catch (InputMismatchException | NumberFormatException exception) {
             System.err.println("""
                     Input mismatch; verify correct input for each flag.
-                    -c and -port flags MUST be followed by integers.
+                    -c and -port flags must be followed by integers.
                     """);
             usageAndExit(true);
         }
@@ -86,28 +93,34 @@ public class Pktsniffer {
      */
     private void parseAddress(String address, boolean isNet) {
         String[] addArray = address.split("\\.");
-        if (addArray.length != 4) {
-            System.err.println("""
-                        Incorrect IP address format. Must be formatted:
-                        [int].[int].[int].[int]""");
-            System.exit(1);
-        }
-        int[] toParse;
-        if (isNet) {
-            toParse = new int[3];
-            netAddress = toParse;
-        } else {
-            toParse = new int[4];
-            hostAddress = toParse;
-        }
-
+        int[] toParse = new int[addArray.length];
         for (int i = 0; i < toParse.length; ++i) {
             toParse[i] = Integer.parseInt(addArray[i]);
+        }
+
+        if (isNet) {
+            if (toParse.length < 3 || toParse.length > 4) {
+                System.err.println("""
+                        Incorrect IP address format for -net. Must be formatted:
+                        [int].[int].[int] or [int].[int].[int].[int]""");
+                System.exit(1);
+            }
+            netAddress = toParse;
+        } else {
+            if (toParse.length != 4) {
+                System.err.println("""
+                        Incorrect IP address format for -host. Must be formatted:
+                        [int].[int].[int].[int]""");
+                System.exit(1);
+            }
+            hostAddress = toParse;
         }
     }
 
     private static void usageAndExit(boolean isError) {
-        System.err.println("java Pktsniffer -r [file]");
+        System.err.println("java Pktsniffer [-r <filename>] [-c <integer>] " +
+                "[-host <IP add>] [-port <integer>] [-net <IP add>] [-ip] " +
+                "[-tcp] [-udp] [-icmp]");
         System.exit(isError ? 1 : 0);
     }
 
@@ -117,7 +130,6 @@ public class Pktsniffer {
     public void runSniffer() {
         File pcapFile = new File(filename);
         try (FileInputStream dataIn = new FileInputStream(pcapFile)) {
-            boolean debug = false;
             if (debug) {
                 runDebug(dataIn);
             } else {
@@ -162,7 +174,7 @@ public class Pktsniffer {
      * @throws IOException
      */
     private void analyzePacket(FileInputStream dataIn) throws IOException{
-        // reading in pcap file header (24 bytes) and packet record (16 bytes)
+        // read in pcap file header (24 bytes)
         byte[] pcapHeader = new byte[24];
         dataIn.read(pcapHeader);
         final int ethernetType = 1; // Link-Layer header type
@@ -172,6 +184,7 @@ public class Pktsniffer {
         }
 
         while (true) {
+            // read packet record (16 bytes)
             byte[] packetRecord = new byte[16];
             int endOfFile = dataIn.read(packetRecord);
             // stop reading file if end of file or if number of requested
@@ -179,21 +192,27 @@ public class Pktsniffer {
             if (endOfFile == -1 || this.printedPkts == this.packetCount) {
                 break;
             }
+
+            // determine total packet length (headers + payload)
             String pktSizeStr = String.format("%02x%02x%02x%02x",
                     packetRecord[15], packetRecord[14], packetRecord[13], packetRecord[12]);
             int pktSizeInt = Integer.parseInt(pktSizeStr, 16);
             payload = pktSizeInt;
 
+            // initialize new output message
             StringBuilder packetMSG = new StringBuilder();
-            packetMSG.append(this.isEther(dataIn, pktSizeInt));
+
+            // assumption that every packet will start with an ethernet header
+            nextHeader = "isEther";
 
             // loop to read each header and payload
             while (!endOfPacket) {
                 switch (nextHeader) {
-                    case "isIP" -> packetMSG.append(this.isIP(dataIn));
-                    case "isTCP" -> packetMSG.append(this.isTCP(dataIn));
-                    case "isUDP" -> packetMSG.append(this.isUDP(dataIn));
-                    case "isICMP" -> packetMSG.append(this.isICMP(dataIn));
+                    case "isEther" -> this.isEther(dataIn, packetMSG, pktSizeInt);
+                    case "isIP" -> this.isIP(dataIn, packetMSG);
+                    case "isTCP" -> this.isTCP(dataIn, packetMSG);
+                    case "isUDP" -> this.isUDP(dataIn, packetMSG);
+                    case "isICMP" -> this.isICMP(dataIn, packetMSG);
                     case "isEnd" -> this.isEnd(dataIn);
                     default -> usageAndExit(false);
                 }
@@ -207,75 +226,76 @@ public class Pktsniffer {
     /**
      * Reads/parses the packet's ethernet header.
      * @param dataIn input file
-     * @return formatted string of ethernet header
+     * @param pktMSG formatted output string
+     * @param packetSize number of bytes in packet
      * @throws IOException
      */
-    public StringBuilder isEther(FileInputStream dataIn, int packetSize) throws IOException {
+    public void isEther(FileInputStream dataIn, StringBuilder pktMSG, int packetSize) throws IOException {
         // read/parse ethernet frame
         byte[] etherArray = new byte[14];
         payload -= etherArray.length;
         dataIn.read(etherArray);
-        return EtherFrame.parseEther(etherArray, packetSize);
+        EtherFrame.parseEther(etherArray, pktMSG, packetSize);
     }
 
     /**
      * Reads/parses the packet's IP header.
      * @param dataIn input file
-     * @return formatted string of IP header
+     * @param pktMSG formatted output string
      * @throws IOException
      */
-    public StringBuilder isIP(FileInputStream dataIn) throws IOException {
+    public void isIP(FileInputStream dataIn, StringBuilder pktMSG) throws IOException {
         // read/parse IP stack
         this.ipInPacket = true;
         byte[] ipArray = new byte[20];
         payload -= ipArray.length;
         dataIn.read(ipArray);
-        return IPPacket.parseIP(ipArray);
+        IPPacket.parseIP(ipArray, pktMSG);
     }
 
     /**
      * Reads/parses the packet's TCP header.
      * @param dataIn input file
-     * @return formatted string of TCP header
+     * @param pktMSG formatted output string
      * @throws IOException
      */
-    public StringBuilder isTCP(FileInputStream dataIn) throws IOException {
+    public void isTCP(FileInputStream dataIn, StringBuilder pktMSG) throws IOException {
         // read/parse TCP segment
         this.tcpInPacket = true;
         byte[] tcpArray = new byte[20];
         payload -= tcpArray.length;
         dataIn.read(tcpArray);
-        return TCPSegment.parseTCP(tcpArray);
+        TCPSegment.parseTCP(tcpArray, pktMSG);
     }
 
     /**
      * Reads/parses the packet's UDP header.
      * @param dataIn input file
-     * @return formatted string of UDP header
+     * @param pktMSG formatted output string
      * @throws IOException
      */
-    public StringBuilder isUDP(FileInputStream dataIn) throws IOException {
+    public void isUDP(FileInputStream dataIn, StringBuilder pktMSG) throws IOException {
         // read/parse UDP segment
         this.udpInPacket = true;
         byte[] udpArray = new byte[8];
         payload -= udpArray.length;
         dataIn.read(udpArray);
-        return UDPDatagram.parseUDP(udpArray);
+        UDPDatagram.parseUDP(udpArray, pktMSG);
     }
 
     /**
      * Reads/parses the packet's ICMP header.
      * @param dataIn input file
-     * @return formatted string of ICMP header
+     * @param pktMSG formatted output string
      * @throws IOException
      */
-    public StringBuilder isICMP(FileInputStream dataIn) throws IOException {
+    public void isICMP(FileInputStream dataIn, StringBuilder pktMSG) throws IOException {
         // read/parse ICMP segment
         this.icmpInPacket = true;
         byte[] icmpArray = new byte[8];
         payload -= icmpArray.length;
         dataIn.read(icmpArray);
-        return ICMPSegment.parseICMP(icmpArray);
+        ICMPSegment.parseICMP(icmpArray, pktMSG);
     }
 
     /**
