@@ -250,7 +250,7 @@ public class Pktsniffer {
         byte[] ipArray = new byte[20];
         payload -= ipArray.length;
         dataIn.read(ipArray);
-        IPPacket.parseIP(ipArray, pktMSG);
+        IPDatagram.parseIP(ipArray, pktMSG);
     }
 
     /**
@@ -280,7 +280,7 @@ public class Pktsniffer {
         byte[] udpArray = new byte[8];
         payload -= udpArray.length;
         dataIn.read(udpArray);
-        UDPDatagram.parseUDP(udpArray, pktMSG);
+        UDPSegment.parseUDP(udpArray, pktMSG);
     }
 
     /**

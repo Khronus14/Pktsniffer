@@ -7,7 +7,7 @@
  * @author David D. Robinson, ddr6248@rit.edu
  */
 
-public class UDPDatagram {
+public class UDPSegment {
     private static final String udpTitle = String.format(Pktsniffer.title, "UDP", "UDP");
     private static final String udpBreak = "UDP:\n";
     private static final String sourcePort = "UDP:  Source port = %d\n";

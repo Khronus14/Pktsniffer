@@ -7,7 +7,7 @@
  * @author David D. Robinson, ddr6248@rit.edu
  */
 
-public class IPPacket {
+public class IPDatagram {
     private static final String ipTitle = String.format(Pktsniffer.title, "IP", "IP");
     private static final String ipBreak = "IP:\n";
     private static final String versionIP = "IP:  Version = %c\n";
