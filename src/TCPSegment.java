@@ -20,7 +20,7 @@ public class TCPSegment {
     private static final String window = "TCP:  Window = %d\n";
     private static final String checkSumTCP = "TCP:  Checksum = 0x%s\n";
     private static final String urgentPointer = "TCP:  Urgent pointer = %s\n";
-    private static final String tcpOptions = "TCP:  %s\n";
+    private static final String tcpOptions = "TCP:  Options = %s\n";
 
     public static StringBuilder parseTCP(byte[] tcpArray) {
         StringBuilder tcpMSG = new StringBuilder(tcpTitle);
@@ -58,9 +58,16 @@ public class TCPSegment {
         String dataOffStr = String.format("%02x", tcpArray[12]);
         String offsetLen = "Unknown";
         String tcpOptionStr = "Unknown";
-        if (dataOffStr.charAt(0) == '5') {
-            offsetLen = "20";
-            tcpOptionStr = "No options";
+        switch (dataOffStr.charAt(0)) {
+            case '5' -> {
+                offsetLen = "20";
+                tcpOptionStr = "No options";
+            }
+            case '8' -> {
+                offsetLen = "32";
+                tcpOptionStr = "12 bytes long";
+            }
+            default -> offsetLen = String.format("%s (Not parsed)", offsetLen);
         }
         tcpMSG.append(String.format(dataOffset, offsetLen));
 
@@ -108,5 +115,9 @@ public class TCPSegment {
         // reset values
         Pktsniffer.nextHeader = "isEnd";
         return tcpMSG;
+    }
+
+    private void readOptions() {
+        //TODO
     }
 }

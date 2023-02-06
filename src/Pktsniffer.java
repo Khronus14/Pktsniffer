@@ -1,13 +1,15 @@
+/**
+ * Program analyzes a single .pcap file and displays packet header information.
+ * Project 1 for CSCI 651
+ *
+ * @author David D. Robinson, ddr6248@rit.edu
+ */
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.InputMismatchException;
-import java.util.Optional;
-
-/**
- * @author David D. Robinson, ddr6248@rit.edu
- */
 
 public class Pktsniffer {
     public static int[] hostAddress;
@@ -18,10 +20,8 @@ public class Pktsniffer {
     public static boolean netMatch = false;
     public static final String title = "%s:  ----- %s Header -----\n";
     public static String nextHeader;
-
     private static boolean endOfPacket = false;
     private static String filename;
-
     private int packetCount = -1;
     private int printedPkts = 0;
     private boolean checkHeader = false;
@@ -33,7 +33,7 @@ public class Pktsniffer {
     private boolean udpInPacket = false;
     private boolean checkForICMP = false;
     private boolean icmpInPacket = false;
-    private int payload;
+    private static int payload;
 
     public static void main(String[] args) {
         Pktsniffer pktsniffer = new Pktsniffer();
@@ -182,7 +182,7 @@ public class Pktsniffer {
             String pktSizeStr = String.format("%02x%02x%02x%02x",
                     packetRecord[15], packetRecord[14], packetRecord[13], packetRecord[12]);
             int pktSizeInt = Integer.parseInt(pktSizeStr, 16);
-            this.payload = pktSizeInt;
+            payload = pktSizeInt;
 
             StringBuilder packetMSG = new StringBuilder();
             packetMSG.append(this.isEther(dataIn, pktSizeInt));
@@ -200,7 +200,7 @@ public class Pktsniffer {
             }
             this.printPacket(packetMSG);
             Pktsniffer.endOfPacket = false;
-            this.payload = 0;
+            payload = 0;
         }
     }
 
@@ -213,7 +213,7 @@ public class Pktsniffer {
     public StringBuilder isEther(FileInputStream dataIn, int packetSize) throws IOException {
         // read/parse ethernet frame
         byte[] etherArray = new byte[14];
-        this.payload -= etherArray.length;
+        payload -= etherArray.length;
         dataIn.read(etherArray);
         return EtherFrame.parseEther(etherArray, packetSize);
     }
@@ -228,7 +228,7 @@ public class Pktsniffer {
         // read/parse IP stack
         this.ipInPacket = true;
         byte[] ipArray = new byte[20];
-        this.payload -= ipArray.length;
+        payload -= ipArray.length;
         dataIn.read(ipArray);
         return IPPacket.parseIP(ipArray);
     }
@@ -243,7 +243,7 @@ public class Pktsniffer {
         // read/parse TCP segment
         this.tcpInPacket = true;
         byte[] tcpArray = new byte[20];
-        this.payload -= tcpArray.length;
+        payload -= tcpArray.length;
         dataIn.read(tcpArray);
         return TCPSegment.parseTCP(tcpArray);
     }
@@ -258,7 +258,7 @@ public class Pktsniffer {
         // read/parse UDP segment
         this.udpInPacket = true;
         byte[] udpArray = new byte[8];
-        this.payload -= udpArray.length;
+        payload -= udpArray.length;
         dataIn.read(udpArray);
         return UDPDatagram.parseUDP(udpArray);
     }
@@ -273,7 +273,7 @@ public class Pktsniffer {
         // read/parse ICMP segment
         this.icmpInPacket = true;
         byte[] icmpArray = new byte[8];
-        this.payload -= icmpArray.length;
+        payload -= icmpArray.length;
         dataIn.read(icmpArray);
         return ICMPSegment.parseICMP(icmpArray);
     }
@@ -285,7 +285,7 @@ public class Pktsniffer {
      */
     public void isEnd(FileInputStream dataIn) throws IOException {
         // reads payload
-        byte[] payloadArray = new byte[this.payload];
+        byte[] payloadArray = new byte[payload];
         dataIn.read(payloadArray);
         Pktsniffer.endOfPacket = true;
     }
@@ -341,8 +341,9 @@ public class Pktsniffer {
         }
 
         if (portPrint && hostPrint && netPrint && headerPrint) {
-            System.out.println(pktMessage);
             this.printedPkts++;
+            //System.out.println("********** Packet number: " + this.printedPkts + " **********");
+            System.out.println(pktMessage);
         }
 
         this.resetFlags();

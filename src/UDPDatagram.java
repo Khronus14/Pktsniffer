@@ -13,6 +13,9 @@ public class UDPDatagram {
         // add byte 0 and 1 for source port
         String sPortHex = String.format("%02x%02x", udpArray[0], udpArray[1]);
         int sPortInt = Integer.parseInt(sPortHex, 16);
+        if (Pktsniffer.port == -1 || sPortInt == Pktsniffer.port) {
+            Pktsniffer.correctPort = true;
+        }
         udpMSG.append(String.format(sourcePort, sPortInt));
 
         // add byte 2 and 3 for destination port
@@ -26,9 +29,6 @@ public class UDPDatagram {
         // add byte 4 and 5 for length
         String lenHex = String.format("%02x%02x", udpArray[4], udpArray[5]);
         int lenInt = Integer.parseInt(lenHex, 16);
-        if (Pktsniffer.port == -1 || lenInt == Pktsniffer.port) {
-            Pktsniffer.correctPort = true;
-        }
         udpMSG.append(String.format(length, lenInt));
 
         String checkSumHex = String.format("%02x%02x", udpArray[6], udpArray[7]);

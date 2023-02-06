@@ -5,10 +5,10 @@ public class IPPacket {
     private static final String headerLength = "IP:  Header length = %s bytes\n";
     private static final String typeOfService = """
                             IP:  Type of service = 0x%s
-                            IP:     xxx. .... = %s (precedence)
-                            IP:     ...%s .... = %s
-                            IP:     .... %s... = %s
-                            IP:     .... .%s.. = %s
+                            IP:     xxx. .... = %d (precedence)
+                            IP:     ...%s .... = %snormal delay
+                            IP:     .... %s... = %snormal throughput
+                            IP:     .... .%s.. = %snormal reliability
                             """;
     private static final String totalLength = "IP:  Total length = %d bytes\n";
     private static final String identification = "IP:  Identification = %d\n";
@@ -20,20 +20,27 @@ public class IPPacket {
     private static final String fragmentOff = "IP:  Fragment offset = %d bytes\n";
     private static final String tTL = "IP:  Time to live = %d seconds/hops\n";
     private static final String protocol = "IP:  Protocol = %s\n";
-    private static final String checkSumIP = "IP:  Header checksum = %s\n";
+    private static final String checkSumIP = "IP:  Header checksum = 0x%s\n";
     private static final String sourceAdd = "IP:  Source address = %d.%d.%d.%d\n";
     private static final String destAdd = "IP:  Destination address = %d.%d.%d.%d\n";
-    private static final String ipOptions = "IP:  %s\n";
+    private static final String ipOptions = "IP:  Options = %s\n";
 
     public static StringBuilder parseIP(byte[] ipArray) {
         StringBuilder iPMSG = new StringBuilder(ipTitle);
         iPMSG.append(ipBreak + "\n");
 
         // separate first byte into two values
-        String ver_lenByte = String.format("%x", ipArray[0]);
+        String ver_lenByte = String.format("%02x", ipArray[0]);
+        if (ver_lenByte.charAt(0) == '6') {
+            System.out.println("""
+                    IPv6 packet header detected.
+                    Program does not parse IPv6 packet headers.
+                    """);
+            System.exit(0);
+        }
         iPMSG.append(String.format(versionIP, ver_lenByte.charAt(0)));
         String headerLen = "Unknown";
-        String optionStr = "Unknown";
+        String optionStr = "Unknown";  //TODO option length
         if (ver_lenByte.charAt(1) == '5') {
             headerLen = "20";
             optionStr = "No options";
@@ -47,25 +54,23 @@ public class IPPacket {
         String step2a = Integer.toBinaryString(step1a); // convert to binary
         String step3a = String.format("%8s", step2a).replace(' ', '0'); // add any leading zeros
         String step4a = step3a.substring(0, 6); // trim to digits needed
-        int step5a = Integer.parseInt(step4a, 2); // convert to int
-        String step6a = Integer.toHexString(step5a); // convert to hex
 
-        String precedence, delay, throughput, reliability;
-        precedence = (step4a.startsWith("000")) ? "0" : "Unknown";
-        delay = (step4a.charAt(3) == '0') ? "normal delay" : "Unknown";
-        throughput = (step4a.charAt(4) == '0') ? "normal throughput" : "Unknown";
-        reliability = (step4a.charAt(5) == '0') ? "normal reliability" : "Unknown";
-        iPMSG.append(String.format(typeOfService, step6a, precedence,
+        String delay, throughput, reliability;
+        int precedence = Integer.parseInt(step4a.substring(0, 3),2);
+        delay = (step4a.charAt(3) == '0') ? "" : "non-";
+        throughput = (step4a.charAt(4) == '0') ? "" : "non-";
+        reliability = (step4a.charAt(5) == '0') ? "" : "non-";
+        iPMSG.append(String.format(typeOfService, serviceTemp, precedence,
                 step4a.charAt(3), delay, step4a.charAt(4), throughput,
                 step4a.charAt(5), reliability));
 
         // add byte 2 and 3 for total length
-        String lenHex = String.format("%x%x", ipArray[2], ipArray[3]);
+        String lenHex = String.format("%02x%02x", ipArray[2], ipArray[3]);
         int lenInt = Integer.parseInt(lenHex, 16);
         iPMSG.append(String.format(totalLength, lenInt));
 
         // add byte 4 and 5 for identification
-        String idHex = String.format("%x%x", ipArray[4], ipArray[5]);
+        String idHex = String.format("%02x%02x", ipArray[4], ipArray[5]);
         int idInt = Integer.parseInt(idHex, 16);
         iPMSG.append(String.format(identification, idInt));
 
